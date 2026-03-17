@@ -4,16 +4,19 @@
 #Last Modified: 16/03/26
 
 import math
-import decimal
 import BiClass
 
 #-----Constants-----
 
 #Special numbers is for numbers that don't follow the normal logic for number to word conversion
-SPECIAL_NUMBERS: dict[int, str] = {0: "ZERO", 10: "TEN", 11: "ELEVEN", 12: "TWELVE", 14: "FOURTEEN"}
-ONES_PLACE: BiClass.BiList[str] = BiClass.BiList["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"])
-TENS_PLACE: BiClass.BiList[str] = BiClass.BiList["", "TEN", "TWEN", "THIR", "FOR", "FIF", "SIX", "SEVEN", "EIGH", "NINE"])
-PLACES: BiClass.BiList[str] = BiClass.BiList(["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILLION", "QUINTILLION"])
+SPECIAL_NUMBERS: BiClass.BiDict = BiClass.BiDict({0: "ZERO", 10: "TEN", 11: "ELEVEN", 12: "TWELVE", 14: "FOURTEEN"})
+ONES_PLACE: BiClass.BiList = BiClass.BiList("ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE")
+TENS_PLACE: BiClass.BiList = BiClass.BiList("", "TEN", "TWEN", "THIR", "FOR", "FIF", "SIX", "SEVEN", "EIGH", "NINE")
+PLACES: BiClass.BiList = BiClass.BiList("", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILLION", "QUINTILLION", "SEXTILLION",
+	                                "SEPTILLION", "OCTILLION", "NONILLION", "DECILLION", "UNDECILLION", "DUODECILLION", "TREDECILLION",
+	                            "QUATTUORDECILLION", "QUINDECILLION", "SEXDECILLION", "SEPTENDECILLION", "OCTODECILLION", "NOVEMDECILLION",
+	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
+	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION")
 
 #-----Functions-----
 
@@ -32,8 +35,7 @@ def number_to_word(number_to_turn: float) -> str:
     
     #Gets the decimal part from the float as an integer
     if not number_to_turn.is_integer():
-        decimal_part = int(str(decimal.Decimal(str(abs(number_to_turn))) % 1).replace("0.", ""))
-    
+        decimal_part = int(str(number_to_turn).partition(".")[2].rstrip("0"))    
     number_to_turn: int = int(number_to_turn)
 
     #Converts chunks of 1-3 digits into words
@@ -101,7 +103,7 @@ def number_to_word(number_to_turn: float) -> str:
     #Converts the number into a list with each item corresponding to one digit
     number_as_list: list[int] = integer_to_number_list(number_to_turn)
 
-    chunk_amount: int = math.ceil(len(number_as_list) / 3)
+    chunk_amount: int = (len(number_as_list) + 2) // 3
     
     digits_left: int = len(number_as_list)
     
@@ -145,6 +147,82 @@ def word_to_number(word_to_turn: str) -> float:
 
         #Hundreds digit
         if "HUNDRED" in curr_chunk:
-            chunk_number += 
+            chunk_number += ONES_PLACE[curr_chunk[0]] * 100
+            del curr_chunk[:2]
+        if not curr_chunk: return chunk_number
+        #Tens digit
+        curr_word: str = curr_chunk.pop(0)
+        if curr_word in SPECIAL_NUMBERS:
+            chunk_number += SPECIAL_NUMBERS[curr_word]
+        elif curr_word in ONES_PLACE:
+            chunk_number += ONES_PLACE[curr_word]
+        #Removes the "TEEN" or "TY" to get it's index from the 'TENS_PLACE' list
+        elif "TEEN" in curr_word:
+            chunk_number += TENS_PLACE[curr_word.replace("TEEN", "")] + 10
+        else:
+            chunk_number += TENS_PLACE[curr_word.replace("TY", "")] * 10
+            #Ones digit
+            if curr_chunk: chunk_number += ONES_PLACE[curr_chunk[0]]
+        return chunk_number
 
-input(number_to_word(-2613856123.89312))
+    word_to_turn = sanitise_word_to_turn(word_to_turn)
+    word_as_list: BiClass.BiList = BiClass.BiList(*word_to_turn.split())
+    #Bool for whether the number is a negative or not
+    is_negative: bool = word_as_list[0] == "NEGATIVE"
+    #Removes the word negative if it exists
+    if is_negative: word_as_list.pop(0)
+
+    #Gets the decimal part if 'point' exists in the word list
+    integer_word_as_list: list[str] = word_as_list
+    decimal_word_as_list: list[str] = []
+    if "POINT" in word_as_list:
+        point_index: int = word_as_list["POINT"]
+        integer_word_as_list = word_as_list[:point_index]
+        decimal_word_as_list = word_as_list[point_index + 1:]
+    #Clears the word as list since its not needed anymore and saves memory
+    del word_as_list
+    #Returns zero if there isn't any words after sanitising the words
+    if not integer_word_as_list and not decimal_word_as_list: return 0
+
+    chunk_list: list[list[str]] = []
+    left_index: int = 0
+    #Cuts the list into chunks of 3 words and its place e.g hundreds, thousands, millions
+    for i, integer_word in enumerate(integer_word_as_list):
+        if integer_word in PLACES:
+            chunk_list.append(integer_word_as_list[left_index:i+1])
+            left_index = i+1
+
+    #Adds the final chunk which should be the hundreds to ones place
+    chunk_list.append(integer_word_as_list[left_index:])
+    #Handles each chunk and adds it to 'word_as_number' at 10 to the power of its place
+    for i, chunk in enumerate(chunk_list):
+        if i == len(chunk_list) - 1: break
+        chunk_place: str = chunk.pop()
+        word_as_number += hundred_place_to_number(chunk) * pow(10, PLACES[chunk_place] * 3)
+    #Adds the final chunk which should be the hundreds to ones place
+    word_as_number += hundred_place_to_number(chunk_list[-1])
+
+    #Decimal Logic
+    if decimal_word_as_list:
+        for i, word in enumerate(decimal_word_as_list):
+            word_as_number += ONES_PLACE[word] * pow(10, (i+1) * -1)
+
+    #Turns the number into a negative
+    if is_negative: word_as_number *= -1
+    return float(word_as_number)
+
+def test():
+    while True:
+        user_input = input("Input word or number to convert: ")
+        try:
+            print(number_to_word(float(user_input)))
+        except:
+            try:
+                number = word_to_number(user_input)
+                if number == 0 and user_input.strip().upper() != "ZERO":
+                    print("Invalid input!")
+                else:
+                    print(number)
+            except ValueError as e:
+                print(f"Invalid input! {e}")
+test()
