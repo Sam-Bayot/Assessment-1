@@ -5,18 +5,20 @@
 
 import math
 import BiClass
+import typing
 
 #-----Constants-----
 
 #Special numbers is for numbers that don't follow the normal logic for number to word conversion
-SPECIAL_NUMBERS: BiClass.BiDict = BiClass.BiDict({0: "ZERO", 10: "TEN", 11: "ELEVEN", 12: "TWELVE", 14: "FOURTEEN"})
-ONES_PLACE: BiClass.BiList = BiClass.BiList("ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE")
-TENS_PLACE: BiClass.BiList = BiClass.BiList("", "TEN", "TWEN", "THIR", "FOR", "FIF", "SIX", "SEVEN", "EIGH", "NINE")
-PLACES: BiClass.BiList = BiClass.BiList("", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILLION", "QUINTILLION", "SEXTILLION",
+SPECIAL_NUMBERS: BiClass.BiDict[int, str] = BiClass.BiDict({0: "ZERO", 10: "TEN", 11: "ELEVEN", 12: "TWELVE", 14: "FOURTEEN"})
+ONES_PLACE: BiClass.BiList[str] = BiClass.BiList("ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE")
+TENS_PLACE: BiClass.BiList[str] = BiClass.BiList("", "TEN", "TWEN", "THIR", "FOR", "FIF", "SIX", "SEVEN", "EIGH", "NINE")
+PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILLION", "QUINTILLION", "SEXTILLION",
 	                                "SEPTILLION", "OCTILLION", "NONILLION", "DECILLION", "UNDECILLION", "DUODECILLION", "TREDECILLION",
 	                            "QUATTUORDECILLION", "QUINDECILLION", "SEXDECILLION", "SEPTENDECILLION", "OCTODECILLION", "NOVEMDECILLION",
 	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
-	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION")
+	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION"]
+PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 
 #-----Functions-----
 
@@ -166,7 +168,7 @@ def word_to_number(word_to_turn: str) -> float:
         return chunk_number
 
     word_to_turn = sanitise_word_to_turn(word_to_turn)
-    word_as_list: BiClass.BiList = BiClass.BiList(*word_to_turn.split())
+    word_as_list: BiClass.BiList[str] = BiClass.BiList(*word_to_turn.split())
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
     #Removes the word negative if it exists
@@ -198,31 +200,38 @@ def word_to_number(word_to_turn: str) -> float:
     for i, chunk in enumerate(chunk_list):
         if i == len(chunk_list) - 1: break
         chunk_place: str = chunk.pop()
-        word_as_number += hundred_place_to_number(chunk) * pow(10, PLACES[chunk_place] * 3)
+        word_as_number += hundred_place_to_number(chunk) * PLACE_VALUES[chunk_place]
     #Adds the final chunk which should be the hundreds to ones place
     word_as_number += hundred_place_to_number(chunk_list[-1])
 
     #Decimal Logic
     if decimal_word_as_list:
-        for i, word in enumerate(decimal_word_as_list):
-            word_as_number += ONES_PLACE[word] * pow(10, (i+1) * -1)
+        word_as_number += float("." + "".join(str(ONES_PLACE[word]) for word in decimal_word_as_list))
 
     #Turns the number into a negative
     if is_negative: word_as_number *= -1
     return float(word_as_number)
 
+#Test function for converting words or numbers
 def test():
     while True:
         user_input = input("Input word or number to convert: ")
+        #Tries to set user input to a float
         try:
             print(number_to_word(float(user_input)))
         except:
+            #If there's an error, then try to turn the word into a number
             try:
                 number = word_to_number(user_input)
+                #If the words are invalid or nothing is inputted then print invalid input
                 if number == 0 and user_input.strip().upper() != "ZERO":
                     print("Invalid input!")
                 else:
                     print(number)
-            except ValueError as e:
-                print(f"Invalid input! {e}")
-test()
+            except:
+                #If a word isn't correct print invalid input
+                print(f"Invalid input!")
+
+#Only runs the test function if running this script
+if __name__ == "__main__":
+    test()

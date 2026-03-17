@@ -5,7 +5,7 @@
 
 #Bidirectional dictionary with unique one-one relationship
 class BiDict:
-
+    
     #Initialise function that creates the forward and backward dicts
     def __init__(self, forward_dict: dict) -> None:
         self.forward_dict: dict = forward_dict
@@ -39,9 +39,13 @@ class BiDict:
     def __str__(self):
         return str(self.forward_dict)
 
+    #Allows the dictionary to have static type hinting
+    def __class_getitem__(cls, item):
+        return cls
+    
 #Sub-Class of BiDict for lists      
 class BiList(BiDict):
-
+    
     #Creates a forward list and forward and backward dicts
     def __init__(self, *items: any) -> None:
         self.forward_list: list = list(items)
