@@ -16,7 +16,8 @@ PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILL
 	                                "SEPTILLION", "OCTILLION", "NONILLION", "DECILLION", "UNDECILLION", "DUODECILLION", "TREDECILLION",
 	                            "QUATTUORDECILLION", "QUINDECILLION", "SEXDECILLION", "SEPTENDECILLION", "OCTODECILLION", "NOVEMDECILLION",
 	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
-	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION"]
+	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION",
+                     "Tretrigintillion", "Quattuortrigintillion", "Quintrigintillion", "Sextrigintillion", "Septentrigintillion", "Septentrigintillion", "Novemtrigintillion"]
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 
 #-----Functions-----
@@ -33,12 +34,16 @@ def integer_to_number_list(integer: int) -> list[int]:
 def number_to_word(number_to_turn: str) -> str:
 
     #Splits the number into the integer and decimal parts
-    def get_number_parts(number_as_str: str) -> tuple[str, str]:
+    def get_number_parts(number_as_str: str) -> list[str, str]:
         parts: list[str] = number_as_str.partition(".")
-        return (parts[0], parts[2].rstrip("0"))
+        return [parts[0], parts[2].rstrip("0")]
     
     number_word_list: list[str] = []
-    number_parts: tuple[str, str] = get_number_parts(number_to_turn)
+    number_parts: list[str, str] = get_number_parts(number_to_turn)
+    
+    #Sets the integer part to zero if it doesn't exist
+    if not number_parts[0].strip("-"):
+        number_parts[0] += "0"
     
     #Converts chunks of 1-3 digits into words
     def hundred_place_to_word(number_list: list[int]) -> None:
@@ -93,17 +98,23 @@ def number_to_word(number_to_turn: str) -> str:
         return number_word_list
 
 
-    #Adds 'NEGATIVE' if 'number_to_turn' is less than zero
-    if int(number_parts[0]) < 0:
+    #Adds 'NEGATIVE' if integer part is less than zero
+    if number_parts[0][0] == "-":
         number_word_list.append("NEGATIVE")
+        number_parts[0] = number_parts[0].lstrip("-")
     
     #Returns early if the number is a special number
-    if number_parts[1] == "" and int(number_parts[0]) in SPECIAL_NUMBERS:
-        return SPECIAL_NUMBERS[number_to_turn]
+    if int(number_parts[0]) in SPECIAL_NUMBERS:
+        number_word_list.append(SPECIAL_NUMBERS[int(number_parts[0])])
+        #Adds the decimal part
+        if number_parts[1] != "":
+            decimal_to_word(number_parts[1])
+        #Returns the final words
+        return " ".join(number_word_list)
+        
 
     #Converts the number into a list with each item corresponding to one digit
     number_as_list: list[int] = integer_to_number_list(number_parts[0])
-    print(str(number_to_turn))
     chunk_amount: int = (len(number_as_list) + 2) // 3
     
     digits_left: int = len(number_as_list)
@@ -131,7 +142,7 @@ def number_to_word(number_to_turn: str) -> str:
     return " ".join(number_word_list)
 
 #Converts word into its number counterpart
-def word_to_number(word_to_turn: str) -> float:
+def word_to_number(word_to_turn: str) -> int | float:
     word_as_number: int = 0
 
     #Sanitises the word to turn by removing any unnecessary charaters that the user may input
@@ -210,15 +221,16 @@ def word_to_number(word_to_turn: str) -> float:
 
     #Turns the number into a negative
     if is_negative: word_as_number *= -1
-    return float(word_as_number)
+    return float(word_as_number) if decimal_word_as_list else int(word_as_number)
 
 #Test function for converting words or numbers
 def test():
     while True:
         user_input = input("Input word or number to convert: ")
+        print(number_to_word(user_input).title())
         #Tries to set user input to a float
         try:
-            print(number_to_word(user_input))
+            print(number_to_word(user_input).title())
         except:
             #If there's an error, then try to turn the word into a number
             try:
