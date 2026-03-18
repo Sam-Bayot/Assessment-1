@@ -1,11 +1,10 @@
 #File: NumberWord.py
 #Description: Converts numbers into words
 #Author: Sam Bayot
-#Last Modified: 16/03/26
+#Last Modified: 18/03/26
 
 import math
 import BiClass
-import typing
 
 #-----Constants-----
 
@@ -29,17 +28,18 @@ def number_list_to_integer(number_list: list[int]) -> int:
 #Converts an integer into a list of integers
 def integer_to_number_list(integer: int) -> list[int]:
     return [int(digit) for digit in str(integer)]
-    
-#Converts a number into its word counterpart
-def number_to_word(number_to_turn: float) -> str:
-    number_word_list: list[str] = []
-    decimal_part: int = 0
-    
-    #Gets the decimal part from the float as an integer
-    if not number_to_turn.is_integer():
-        decimal_part = int(str(number_to_turn).partition(".")[2].rstrip("0"))    
-    number_to_turn: int = int(number_to_turn)
 
+#Converts a number into its word counterpart
+def number_to_word(number_to_turn: str) -> str:
+
+    #Splits the number into the integer and decimal parts
+    def get_number_parts(number_as_str: str) -> tuple[str, str]:
+        parts: list[str] = number_as_str.partition(".")
+        return (parts[0], parts[2].rstrip("0"))
+    
+    number_word_list: list[str] = []
+    number_parts: tuple[str, str] = get_number_parts(number_to_turn)
+    
     #Converts chunks of 1-3 digits into words
     def hundred_place_to_word(number_list: list[int]) -> None:
         #Fills the deadspace with zeros to prevent index out of range errors
@@ -83,28 +83,27 @@ def number_to_word(number_to_turn: float) -> str:
         curr_number = number_list[2]
         if curr_number != 0:
             number_word_list.append(ONES_PLACE[curr_number])
-    
-    #Adds the decimal part
-    def add_decimal_as_words() -> None:
+
+    def decimal_to_word(integer_to_turn: str) -> str:
+        #Adds the decimal part
         number_word_list.append("POINT")
         #Adds the ones place name for each digit in the decimal
-        for curr_number in integer_to_number_list(decimal_part):
+        for curr_number in [int(digit) for digit in integer_to_turn]:
             number_word_list.append(ONES_PLACE[curr_number])
+        return number_word_list
+
 
     #Adds 'NEGATIVE' if 'number_to_turn' is less than zero
-    if number_to_turn < 0:
+    if int(number_parts[0]) < 0:
         number_word_list.append("NEGATIVE")
-    #Turns 'number_to_turn' to positive
-    number_to_turn = abs(number_to_turn)
-
+    
     #Returns early if the number is a special number
-    if number_to_turn in SPECIAL_NUMBERS:
-        number_word_list.append(SPECIAL_NUMBERS[number_to_turn])
-        return " ".join(number_word_list)
+    if number_parts[1] == "" and int(number_parts[0]) in SPECIAL_NUMBERS:
+        return SPECIAL_NUMBERS[number_to_turn]
 
     #Converts the number into a list with each item corresponding to one digit
-    number_as_list: list[int] = integer_to_number_list(number_to_turn)
-
+    number_as_list: list[int] = integer_to_number_list(number_parts[0])
+    print(str(number_to_turn))
     chunk_amount: int = (len(number_as_list) + 2) // 3
     
     digits_left: int = len(number_as_list)
@@ -125,8 +124,9 @@ def number_to_word(number_to_turn: float) -> str:
         digits_left -= digit_amount
 
     #Adds the decimal part
-    if decimal_part != 0: add_decimal_as_words()
-
+    if number_parts[1] != "":
+        decimal_to_word(number_parts[1])
+    
     #Returns the final words
     return " ".join(number_word_list)
 
@@ -218,7 +218,7 @@ def test():
         user_input = input("Input word or number to convert: ")
         #Tries to set user input to a float
         try:
-            print(number_to_word(float(user_input)))
+            print(number_to_word(user_input))
         except:
             #If there's an error, then try to turn the word into a number
             try:
