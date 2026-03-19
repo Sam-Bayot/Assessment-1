@@ -5,6 +5,7 @@
 
 import math
 import BiClass
+import AutoCorrect
 
 #-----Constants-----
 
@@ -19,6 +20,9 @@ PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILL
 	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION",
                      "Tretrigintillion", "Quattuortrigintillion", "Quintrigintillion", "Sextrigintillion", "Septentrigintillion", "Septentrigintillion", "Novemtrigintillion"]
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
+BK_TREE_ONES_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(ONES_PLACE)
+BK_TREE_TENS_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(TENS_PLACE)
+BK_TREE_PLACES: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(PLACES)
 
 #-----Functions-----
 
@@ -100,29 +104,23 @@ def number_to_word(number_to_turn: str) -> str:
 
     #Adds 'NEGATIVE' if integer part is less than zero
     if number_parts[0][0] == "-":
-        number_word_list.append("NEGATIVE")
+        if not (number_parts[0] == "-0" and number_parts[1] == ""):
+            number_word_list.append("NEGATIVE")
         number_parts[0] = number_parts[0].lstrip("-")
-    
-    #Returns early if the number is a special number
-    if int(number_parts[0]) in SPECIAL_NUMBERS:
-        number_word_list.append(SPECIAL_NUMBERS[int(number_parts[0])])
-        #Adds the decimal part
-        if number_parts[1] != "":
-            decimal_to_word(number_parts[1])
-        #Returns the final words
-        return " ".join(number_word_list)
-        
 
     #Converts the number into a list with each item corresponding to one digit
     number_as_list: list[int] = integer_to_number_list(number_parts[0])
     chunk_amount: int = (len(number_as_list) + 2) // 3
-    
+    if number_as_list == [0]:
+        chunk_amount = 0
+        number_word_list.append("ZERO")
     digits_left: int = len(number_as_list)
-    
     for i in range(chunk_amount):
         digit_amount: int = ((digits_left - 1) % 3) + 1
         index: int = len(number_as_list) - digits_left
         curr_chunk: list[int] = number_as_list[index:index+digit_amount]
+        if set(curr_chunk) == {0}:
+            continue
         #Adds the word 'AND' if it is the last chunk and the hundreds digit is zero
         if chunk_amount - i == 1 and curr_chunk[0] == 0:
             number_word_list.append("AND")
@@ -227,7 +225,6 @@ def word_to_number(word_to_turn: str) -> int | float:
 def test():
     while True:
         user_input = input("Input word or number to convert: ")
-        print(number_to_word(user_input).title())
         #Tries to set user input to a float
         try:
             print(number_to_word(user_input).title())

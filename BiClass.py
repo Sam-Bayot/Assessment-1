@@ -98,10 +98,20 @@ class BiList(BiDict):
 
     #Removes the last item or index of the list and dicts
     def pop(self, index: int = -1) -> any:
+        #Makes sure the index is positive for iteration later
+        if index < 0: index += len(self.forward_list)
         self.backward_dict.pop(self.forward_list[index])
-        value = self.forward_list.pop(index)
+        popped_value: any = self.forward_list.pop(index)
         self.forward_dict.pop(index)
-        return value
+        #Fixes the indices of the values after popping
+        for i in range(index, len(self.forward_list)):
+            curr_value = self.forward_list[i]
+            self.forward_dict[i] = curr_value
+            self.backward_dict[curr_value] = i
+        #Removes the last value of forward_dict if the forward dict still has a value with the old index
+        if len(self.forward_dict) != len(self.forward_list):
+            self.forward_dict.pop(len(self.forward_list))
+        return popped_value
     
     #Function that allows the object to be iterated upon
     def __iter__(self) -> any:
