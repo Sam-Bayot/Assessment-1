@@ -18,15 +18,15 @@ PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILL
 	                            "QUATTUORDECILLION", "QUINDECILLION", "SEXDECILLION", "SEPTENDECILLION", "OCTODECILLION", "NOVEMDECILLION",
 	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
 	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION",
-                     "TRETRIGINTILLION", "QUATTUORTRIGINTILLION", "QUINTRIGINTILLION", "SEXTRIGINTILLION", "SEPTENTRIGINTILLION", "SEPTENTRIGINTILLION", "NOVEMTRIGINTILLION"]
+                     "TRETRIGINTILLION", "QUATTUORTRIGINTILLION", "QUINTRIGINTILLION", "SEXTRIGINTILLION", "SEPTENTRIGINTILLION", "OCTOTRIGINTILLION", "NOVEMTRIGINTILLION"]
 #The value of each place e.g million = 1000000
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
 BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(list(SPECIAL_NUMBERS.forward_dict.values()) +
                                                           ONES_PLACE.forward_list +
-                                                          [word + "TY" for word in TENS_PLACE[2:]] + [word + "TEEN" for i, word in enumerate(TENS_PLACE[1:]) if i + 10 not in SPECIAL_NUMBERS] +
-                                                          PLACES + ["NEGATIVE", "POINT", "HUNDRED"])
-for node, distance in BK_TREE.get_close_nodes("tow", 3):
+                                                          [word + "TY" for word in TENS_PLACE[2:]] + [word + "TEEN" for i, word in enumerate(TENS_PLACE) if i + 10 not in SPECIAL_NUMBERS] +
+                                                          PLACES + ["NEGATIVE", "POINT", "HUNDRED", "AND"])
+for node, distance in BK_TREE.get_close_nodes("an", 3):
     print(node.word, distance.string_transform_distance)
 #-----Functions-----
 #Converts a list of integers into an integer
@@ -113,6 +113,8 @@ def number_to_word(number_to_turn: str) -> str:
 
     #Converts the number into a list with each item corresponding to one digit
     number_as_list: list[int] = integer_to_number_list(number_parts[0])
+    if len(number_as_list) > len(PLACES) * 3:
+        raise ValueError("Number is too large!")
     chunk_amount: int = (len(number_as_list) + 2) // 3
     if number_as_list == [0]:
         chunk_amount = 0
@@ -180,7 +182,14 @@ def word_to_number(word_to_turn: str) -> int | float:
         return chunk_number
 
     word_to_turn = sanitise_word_to_turn(word_to_turn)
-    word_as_list: BiClass.BiList[str] = BiClass.BiList(*[AutoCorrect.get_closest_word(BK_TREE.get_close_nodes(word, 3))[0].upper() for word in word_to_turn.split()])
+    auto_corrected_words: list[str] = []
+    for word in word_to_turn.split():
+        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 3)
+        closest_word: str = AutoCorrect.get_closest_word(nodes)
+        if closest_word and closest_word[0] != "AND":
+            auto_corrected_words.append(closest_word[0])
+    word_as_list: BiClass.BiList[str] = BiClass.BiList(*auto_corrected_words)
+    print(word_as_list)
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
     #Removes the word negative if it exists
@@ -226,24 +235,31 @@ def word_to_number(word_to_turn: str) -> int | float:
 
 #Test function for converting words or numbers
 def test():
+    def get_word_to_number(user_input: str):
+        #If there's an error, then try to turn the word into a number
+        try:
+            number = word_to_number(user_input)
+            #If the words are invalid or nothing is inputted then print invalid input
+            if number == 0 and user_input.strip().upper() != "ZERO":
+                print("Invalid input!")
+            else:
+                print(number)
+        except:
+            #If a word isn't correct print invalid input
+            print(f"Invalid input!")
     while True:
         user_input = input("Input word or number to convert: ")
-        print(word_to_number(user_input))
         #Tries to set user input to a float
         try:
             print(number_to_word(user_input).title())
+        except ValueError as e:
+            if str(e) == "Number is too large!":
+                print(e)
+                continue
+            else:
+                get_word_to_number(user_input)
         except:
-            #If there's an error, then try to turn the word into a number
-            try:
-                number = word_to_number(user_input)
-                #If the words are invalid or nothing is inputted then print invalid input
-                if number == 0 and user_input.strip().upper() != "ZERO":
-                    print("Invalid input!")
-                else:
-                    print(number)
-            except:
-                #If a word isn't correct print invalid input
-                print(f"Invalid input!")
+            get_word_to_number(user_input)
 
 #Only runs the test function if running this script
 if __name__ == "__main__":
