@@ -96,6 +96,11 @@ class BiList(BiDict):
         self.forward_dict[len(self.forward_list) - 1] = item
         self.backward_dict[item] = len(self.forward_list) - 1
 
+    #Adds a list of values to the end of the list
+    def extend(self, items: list[any]) -> None:
+        for item in items:
+            self.append(item)
+    
     #Removes the last item or index of the list and dicts
     def pop(self, index: int = -1) -> any:
         #Makes sure the index is positive for iteration later

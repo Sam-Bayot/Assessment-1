@@ -18,15 +18,16 @@ PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILL
 	                            "QUATTUORDECILLION", "QUINDECILLION", "SEXDECILLION", "SEPTENDECILLION", "OCTODECILLION", "NOVEMDECILLION",
 	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
 	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION",
-                     "Tretrigintillion", "Quattuortrigintillion", "Quintrigintillion", "Sextrigintillion", "Septentrigintillion", "Septentrigintillion", "Novemtrigintillion"]
+                     "TRETRIGINTILLION", "QUATTUORTRIGINTILLION", "QUINTRIGINTILLION", "SEXTRIGINTILLION", "SEPTENTRIGINTILLION", "SEPTENTRIGINTILLION", "NOVEMTRIGINTILLION"]
+#The value of each place e.g million = 1000000
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
-BK_TREE_ONES_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(ONES_PLACE)
-BK_TREE_TENS_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(TENS_PLACE)
-BK_TREE_PLACES: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(PLACES)
-close_node_dict = BK_TREE_PLACES.get_close_nodes("KrtsiLLION", 4)
-for distance in close_node_dict:
-    for node, distance_object in close_node_dict[distance]:
-        print(node.word, distance_object.distance, distance_object.change_positions)
+#BK_TREE of every number word
+BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(list(SPECIAL_NUMBERS.forward_dict.values()) +
+                                                          ONES_PLACE.forward_list +
+                                                          [word + "TY" for word in TENS_PLACE[2:]] + [word + "TEEN" for i, word in enumerate(TENS_PLACE[1:]) if i + 10 not in SPECIAL_NUMBERS] +
+                                                          PLACES + ["NEGATIVE", "POINT", "HUNDRED"])
+for node, distance in BK_TREE.get_close_nodes("tow", 3):
+    print(node.word, distance.string_transform_distance)
 #-----Functions-----
 #Converts a list of integers into an integer
 def number_list_to_integer(number_list: list[int]) -> int:
@@ -153,7 +154,7 @@ def word_to_number(word_to_turn: str) -> int | float:
         .replace(",", "")
         .replace(" AND ", " ")
         )
-
+    
     #Turns chunks of 3 digits and turns them into numbers
     def hundred_place_to_number(curr_chunk: list[str]) -> int:
         chunk_number: int = 0
@@ -179,7 +180,7 @@ def word_to_number(word_to_turn: str) -> int | float:
         return chunk_number
 
     word_to_turn = sanitise_word_to_turn(word_to_turn)
-    word_as_list: BiClass.BiList[str] = BiClass.BiList(*word_to_turn.split())
+    word_as_list: BiClass.BiList[str] = BiClass.BiList(*[AutoCorrect.get_closest_word(BK_TREE.get_close_nodes(word, 3))[0].upper() for word in word_to_turn.split()])
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
     #Removes the word negative if it exists
@@ -227,6 +228,7 @@ def word_to_number(word_to_turn: str) -> int | float:
 def test():
     while True:
         user_input = input("Input word or number to convert: ")
+        print(word_to_number(user_input))
         #Tries to set user input to a float
         try:
             print(number_to_word(user_input).title())
