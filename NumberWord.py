@@ -23,9 +23,11 @@ PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(P
 BK_TREE_ONES_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(ONES_PLACE)
 BK_TREE_TENS_PLACE: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(TENS_PLACE)
 BK_TREE_PLACES: AutoCorrect.BKNode = AutoCorrect.bi_list_to_BK_tree(PLACES)
-
+close_node_dict = BK_TREE_PLACES.get_close_nodes("KrtsiLLION", 4)
+for distance in close_node_dict:
+    for node, distance_object in close_node_dict[distance]:
+        print(node.word, distance_object.distance, distance_object.change_positions)
 #-----Functions-----
-
 #Converts a list of integers into an integer
 def number_list_to_integer(number_list: list[int]) -> int:
     return int("".join([str(number) for number in number_list]))
