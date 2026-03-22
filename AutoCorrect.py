@@ -54,8 +54,7 @@ class LevenshteinDistance(Distance):
             if check_key_position is None or target_key_position is None:
                 return DELETION_ERROR
             #Returns the distance after using the Pythagoras formula
-            distance: float = (((check_key_position[0] - target_key_position[0]) ** 2 + (check_key_position[1] - target_key_position[1]) ** 2) ** 0.5) * REPLACEMENT_MULTIPLIER
-            return min(distance, INSERTION_ERROR + DELETION_ERROR)
+            return min((((check_key_position[0] - target_key_position[0]) ** 2 + (check_key_position[1] - target_key_position[1]) ** 2) ** 0.5) * REPLACEMENT_MULTIPLIER, INSERTION_ERROR + DELETION_ERROR)
         
         #Recursively backtracks through the matrix to get all the possible changes in the string
         def backtrack(x: int, y: int, curr_path: dict[str, list[tuple[int, int]]], curr_distance = 0) -> list[dict[str, list[tuple[int, int]]]]:
@@ -172,18 +171,6 @@ def levenshtein_distance(check_string: str, target_string: str) -> LevenshteinDi
     #Returns the distance instance
     return LevenshteinDistance(check_string, target_string, distance_matrix[len(target_string)][len(check_string)], distance_matrix)
 
-#Gets the closest word based on the list of close nodes
-def get_closest_word(close_nodes: list[list['BKNode', Distance]]) -> tuple[str, float]:
-    #Initialises the best word and distance
-    best_word: str = ""
-    smallest_distance: int = -1
-    #Iterates over the list and gets the word with the smallest distance
-    for node, distance in close_nodes:
-        if smallest_distance == -1 or distance.string_transform_distance < smallest_distance:
-            smallest_distance = distance.string_transform_distance
-            best_word = node.word
-    return best_word, smallest_distance
-
 #Turns a list into a BK_Tree
 def list_to_BK_tree(list_to_turn: list[str]) -> BKNode:
     #Sets the root
@@ -198,4 +185,3 @@ if __name__ == "__main__":
     distance = levenshtein_distance("", "two")
     print(distance.find_changes())
     print(distance.string_transform_distance)
-

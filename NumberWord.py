@@ -192,9 +192,9 @@ def word_to_number(word_to_turn: str) -> int | float:
         nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 5)[0]
         if not nodes:
             raise ValueError(f"{word} not found in BK_TREE")
-        closest_word: str = AutoCorrect.get_closest_word(nodes)
-        if closest_word and closest_word[0] != "AND":
-            auto_corrected_words.append(closest_word[0])
+        closest_node: str = nodes[-1]
+        if closest_node and closest_node[0].word != "AND":
+            auto_corrected_words.append(closest_node[0].word)
     word_as_list: BiClass.BiList[str] = BiClass.BiList(*auto_corrected_words)
     #print(word_as_list)
     #Bool for whether the number is a negative or not
