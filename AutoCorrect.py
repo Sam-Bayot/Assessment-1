@@ -22,9 +22,10 @@ class LevenshteinDistance(Distance):
 
     #Gets the insertions, deletions and replacements between the two strings
     def find_changes(self, best_string_transform_distance: float = -1) -> list[dict[str, list[tuple[int, int]]]]:
-        INSERTION_ERROR: float = 4.0
-        DELETION_ERROR: float = 5.0
-        TRANSPOSITION_ERROR: float = 1.0
+        INSERTION_ERROR: float = 4
+        DELETION_ERROR: float = 4.5
+        TRANSPOSITION_ERROR: float = 1.5
+        REPLACEMENT_MULTIPLIER: float = 1.1
         #Gets the distance between two letters using the Pythagoras formula
         def get_letter_distance(check_letter: str, target_letter: str):
             #Holds all of the relative positions of the letters on a QWERTY NZ keyboard
@@ -80,7 +81,7 @@ class LevenshteinDistance(Distance):
             if x > 0 and y > 0 and self.matrix[y-1][x-1] == cell_score - 1:
                 curr_path["Replacement"].append((x-1, y-1))
                 #Calls backtrack again at next position
-                changes.extend(backtrack(x-1, y-1, curr_path, curr_distance + get_letter_distance(self.check_string[x-1], self.target_string[y-1])))
+                changes.extend(backtrack(x-1, y-1, curr_path, curr_distance + (get_letter_distance(self.check_string[x-1], self.target_string[y-1]) * REPLACEMENT_MULTIPLIER)))
                 curr_path["Replacement"].pop()
             #Insertion
             if y > 0 and self.matrix[y-1][x] == cell_score - 1:
@@ -115,27 +116,28 @@ class BKNode:
             self.next[distance_object.distance] = node
 
     #Gets the nodes within the max distance of the word
-    def get_close_nodes(self, word: str, max_distance: int, close_nodes: list[list['BKNode', Distance]] = None) -> list[list['BKNode', Distance]]:
+    def get_close_nodes(self, word: str, max_distance: int, close_nodes: list[list['BKNode', Distance]] = None, best_string_transform_distance: float = -1) -> list[list['BKNode', Distance]]:
         if close_nodes is None:
             close_nodes = []
-        best_string_transform_distance: float = -1
-        #Gets the distance bounds
+        #Gets the distance
         distance_object: Distance = self.distance_function(word, self.word)
-        if isinstance(distance_object, LevenshteinDistance):
-            distance_object.find_changes(best_string_transform_distance)
-            if distance_object.string_transform_distance < best_string_transform_distance:
-                best_string_transform_distance = distance_object.string_transform_distance
-        
+        #Gets the distance bounds
         left_bound: int = distance_object.distance - max_distance
         right_bound: int = distance_object.distance + max_distance
-        #Adds itself if within the max distance
+        #Adds itself to the close_nodes list if within the max distance
         if distance_object.distance <= max_distance:
+            #Runs only if distance_object is an instance of LevenshteinDistance
+            if isinstance(distance_object, LevenshteinDistance):
+                #Gets the changes and string transform distance
+                distance_object.find_changes(best_string_transform_distance)
+                if distance_object.string_transform_distance < best_string_transform_distance or best_string_transform_distance == -1:
+                    best_string_transform_distance = distance_object.string_transform_distance
             close_nodes.append((self, distance_object))
         #Iterates through the tree
         for distance in self.next:
             #Runs the function on the next node if within the bounds
-            if distance > left_bound and distance < right_bound:
-                self.next[distance].get_close_nodes(word, max_distance, close_nodes)
+            if left_bound <= distance <= right_bound:
+                self.next[distance].get_close_nodes(word, max_distance, close_nodes, best_string_transform_distance)
         return close_nodes
     
 #Calculates the distance between two strings using insertion, deletion and replacement

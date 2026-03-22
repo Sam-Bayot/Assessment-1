@@ -19,14 +19,16 @@ PLACES: list[str] = ["", "THOUSAND", "MILLION", "BILLION", "TRILLION", "QUADRILL
 	                        "VIGINTILLION", "UNVIGINTILLION", "DUOVIGINTILLION", "TRESVIGINTILLION", "QUATTUORVIGINTILLION", "QUINVIGINTILLION",
 	                    "SEXVIGINTILLION", "SEPTEMVIGINTILLION", "OCTOVIGINTILLION", "NOVEMVIGINTILLION","TRIGINTILLION","UNTRIGINTILLION", "DUOTRIGINTILLION",
                      "TRETRIGINTILLION", "QUATTUORTRIGINTILLION", "QUINTRIGINTILLION", "SEXTRIGINTILLION", "SEPTENTRIGINTILLION", "OCTOTRIGINTILLION", "NOVEMTRIGINTILLION"]
+VALID_WORD_LIST: list[str] = (list(SPECIAL_NUMBERS.forward_dict.values()) +
+                            ONES_PLACE.forward_list +
+                            [word + "TY" for word in TENS_PLACE[2:]] +
+                            [word + "TEEN" for i, word in enumerate(TENS_PLACE) if i + 10 not in SPECIAL_NUMBERS] +
+                            PLACES + ["NEGATIVE", "POINT", "HUNDRED", "AND"])
 #The value of each place e.g million = 1000000
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
-BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(list(SPECIAL_NUMBERS.forward_dict.values()) +
-                                                          ONES_PLACE.forward_list +
-                                                          [word + "TY" for word in TENS_PLACE[2:]] + [word + "TEEN" for i, word in enumerate(TENS_PLACE) if i + 10 not in SPECIAL_NUMBERS] +
-                                                          PLACES + ["NEGATIVE", "POINT", "HUNDRED", "AND"])
-for node, distance in BK_TREE.get_close_nodes("an", 3):
+BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(VALID_WORD_LIST)
+for node, distance in BK_TREE.get_close_nodes("Novemvigintillisdson", 5):
     print(node.word, distance.string_transform_distance)
 #-----Functions-----
 #Converts a list of integers into an integer
@@ -184,12 +186,17 @@ def word_to_number(word_to_turn: str) -> int | float:
     word_to_turn = sanitise_word_to_turn(word_to_turn)
     auto_corrected_words: list[str] = []
     for word in word_to_turn.split():
-        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 3)
+        if word in VALID_WORD_LIST:
+            auto_corrected_words.append(word)
+            continue
+        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 5)
+        if not nodes:
+            raise ValueError(f"{word} not found in BK_TREE")
         closest_word: str = AutoCorrect.get_closest_word(nodes)
         if closest_word and closest_word[0] != "AND":
             auto_corrected_words.append(closest_word[0])
     word_as_list: BiClass.BiList[str] = BiClass.BiList(*auto_corrected_words)
-    print(word_as_list)
+    #print(word_as_list)
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
     #Removes the word negative if it exists
@@ -236,14 +243,19 @@ def word_to_number(word_to_turn: str) -> int | float:
 #Test function for converting words or numbers
 def test():
     def get_word_to_number(user_input: str):
-        #If there's an error, then try to turn the word into a number
+        #tries to turn the word into a number
         try:
+            import time
+
+            start = time.perf_counter()
             number = word_to_number(user_input)
             #If the words are invalid or nothing is inputted then print invalid input
             if number == 0 and user_input.strip().upper() != "ZERO":
                 print("Invalid input!")
             else:
                 print(number)
+                end = time.perf_counter()
+                print(f"Time taken: {end - start:.6f} seconds")
         except:
             #If a word isn't correct print invalid input
             print(f"Invalid input!")
