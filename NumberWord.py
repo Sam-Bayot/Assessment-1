@@ -28,7 +28,7 @@ VALID_WORD_LIST: list[str] = (list(SPECIAL_NUMBERS.forward_dict.values()) +
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
 BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(VALID_WORD_LIST)
-for node, distance in BK_TREE.get_close_nodes("Novemvigintillisdson", 5):
+for node, distance in BK_TREE.get_close_nodes("too", 5)[0]:
     print(node.word, distance.string_transform_distance)
 #-----Functions-----
 #Converts a list of integers into an integer
@@ -189,7 +189,7 @@ def word_to_number(word_to_turn: str) -> int | float:
         if word in VALID_WORD_LIST:
             auto_corrected_words.append(word)
             continue
-        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 5)
+        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 5)[0]
         if not nodes:
             raise ValueError(f"{word} not found in BK_TREE")
         closest_word: str = AutoCorrect.get_closest_word(nodes)
@@ -240,22 +240,26 @@ def word_to_number(word_to_turn: str) -> int | float:
     if is_negative: word_as_number *= -1
     return float(word_as_number) if decimal_word_as_list else int(word_as_number)
 
+import time
+
+def start_time_taken():
+    return time.perf_counter()
+def print_time_taken(start):
+    return print(f"Time taken: {time.perf_counter() - start:.6f} seconds")
 #Test function for converting words or numbers
 def test():
     def get_word_to_number(user_input: str):
         #tries to turn the word into a number
         try:
-            import time
-
-            start = time.perf_counter()
+            start = start_time_taken()
             number = word_to_number(user_input)
             #If the words are invalid or nothing is inputted then print invalid input
             if number == 0 and user_input.strip().upper() != "ZERO":
                 print("Invalid input!")
             else:
                 print(number)
-                end = time.perf_counter()
-                print(f"Time taken: {end - start:.6f} seconds")
+                print_time_taken(start)
+                
         except:
             #If a word isn't correct print invalid input
             print(f"Invalid input!")
