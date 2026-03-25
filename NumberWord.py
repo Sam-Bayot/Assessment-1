@@ -1,9 +1,11 @@
 #File: NumberWord.py
 #Description: Converts numbers into words
 #Author: Sam Bayot
-#Last Modified: 18/03/26
+#Last Modified: 23/03/26
 
-import math
+#-----Libraries-----
+
+import time
 import BiClass
 import AutoCorrect
 
@@ -28,9 +30,9 @@ VALID_WORD_LIST: list[str] = (list(SPECIAL_NUMBERS.forward_dict.values()) +
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
 BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(VALID_WORD_LIST)
-for node, distance in BK_TREE.get_close_nodes("too", 5)[0]:
-    print(node.word, distance.string_transform_distance)
+
 #-----Functions-----
+
 #Converts a list of integers into an integer
 def number_list_to_integer(number_list: list[int]) -> int:
     return int("".join([str(number) for number in number_list]))
@@ -157,6 +159,7 @@ def word_to_number(word_to_turn: str) -> int | float:
         .replace("-", " ")
         .replace(",", "")
         .replace(" AND ", " ")
+        .replace("\n", " ")
         )
     
     #Turns chunks of 3 digits and turns them into numbers
@@ -196,7 +199,6 @@ def word_to_number(word_to_turn: str) -> int | float:
         if closest_node and closest_node[0].word != "AND":
             auto_corrected_words.append(closest_node[0].word)
     word_as_list: BiClass.BiList[str] = BiClass.BiList(*auto_corrected_words)
-    #print(word_as_list)
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
     #Removes the word negative if it exists
@@ -240,12 +242,22 @@ def word_to_number(word_to_turn: str) -> int | float:
     if is_negative: word_as_number *= -1
     return float(word_as_number) if decimal_word_as_list else int(word_as_number)
 
-import time
-
 def start_time_taken():
     return time.perf_counter()
 def print_time_taken(start):
     return print(f"Time taken: {time.perf_counter() - start:.6f} seconds")
+
+"""-----TEST VALUE-----
+Eiht Quattuortsrigintillion Too Hundrred Ansd Thwirty For Trtrigintsillion Twp Hundered Ands Forsty Threee Duotrigintillions Eighe Hundrred And Thierty Forur Untrigisntillion Eiht
+Hundrsed Anwd Sity Fibe Trigintillon Too Hundrred Ansd Thorty none Novemviginiatillion Fur Husndred And Eihty Fiv Octovergintillion Spx Hundrsed And Twinty Throe Septemintillion Foulr
+Hundreed Ad Sixy Eigt Sevigintillion Fice Hundreed An Teenty Thee Quniivgintillion Foure Hudred nd Fity Sux Quatorvigintillion Teo Humdred Amd Thorty Foor Threevigintillion Fove Humdred
+Ad Tweenty Thee Duovirgintillion Fur Hunded Ad Thiryeen Unbogintillion Fiur Hunared Ad Teelve Vigibyillion Too Hunrred Ad Thorty For Noehmdecillion To Hudred An Thiorty Fou Octofcrillion
+Ome Humrfed An Townty Thee Sepyerdecillion For Hunred Ad Eleeven Sexfecillion Tep Huvdred Ald Thurtt For Qiondecillion Ome Himdred Ane Sixyy euhht Quartoordecillion Thee Hunderd dna Tweenty
+Oen Trecedikkion Seevn Hunderd Ad Fitfy Too Doudecillino Thee Hunered Ad Foorty noe Undicillion Seen Hunred Ad Fiftty To Dceillion Threee Hudred Ad Forteen Nonollion Fibe Hunded Ad Sebenty
+Two Octokkion Thee Hunddred Andd Foirten aeptollion Seeven Hudred Ad Thorty Too Sextpllion For gundred An Trelve quentillion Thee Hondred An Fourty
+Ones Quadrilloim Fiev Huvdred Ans weventy Fiee Trolloon Seben Hunded Abd Trenty Thwee Bikkion Ohe Hondred Ahf rorty Fove Mokkion Seben Hurded Ad Teenty Thee thosugand Four hunsrde An Fitfeen
+"""
+
 #Test function for converting words or numbers
 def test():
     def get_word_to_number(user_input: str):
@@ -259,10 +271,15 @@ def test():
             else:
                 print(number)
                 print_time_taken(start)
-                
         except:
             #If a word isn't correct print invalid input
             print(f"Invalid input!")
+
+    #Prints out the distances of close words to 'word'
+    def get_word_string_transform_distances(word: str):
+        for node, distance in BK_TREE.get_close_nodes("word", 5)[0]:
+            print(node.word, distance.string_transform_distance)
+    
     while True:
         user_input = input("Input word or number to convert: ")
         #Tries to set user input to a float
@@ -277,6 +294,8 @@ def test():
         except:
             get_word_to_number(user_input)
 
-#Only runs the test function if running this script
+#-----Main-----
+            
 if __name__ == "__main__":
+    
     test()

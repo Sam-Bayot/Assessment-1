@@ -2,9 +2,13 @@
 #Description: This file is used to check if a string is similar to a target string
 # and if so, give the distance between the strings
 #Author: Sam Bayot
-#Last Modified: 19/03/26
+#Last Modified: 23/03/26
+
+#-----Libraries-----
 
 import copy
+
+#-----Classes-----
 
 #Class for distance
 class Distance:
@@ -78,17 +82,17 @@ class LevenshteinDistance(Distance):
                 curr_path["Transposition"].append((x-2, x-1))
                 changes.extend(backtrack(x-2, y-2, curr_path, curr_distance + TRANSPOSITION_ERROR))
                 curr_path["Transposition"].pop()
+            #Insertion
+            if y > 0 and self.matrix[y-1][x] == cell_score - 1:
+                curr_path["Insertion"].append((x, y-1))
+                changes.extend(backtrack(x, y-1, curr_path, curr_distance + INSERTION_ERROR))
+                curr_path["Insertion"].pop()
             #Replacement
             if x > 0 and y > 0 and self.matrix[y-1][x-1] == cell_score - 1:
                 curr_path["Replacement"].append((x-1, y-1))
                 #Calls backtrack again at next position
                 changes.extend(backtrack(x-1, y-1, curr_path, curr_distance + get_letter_distance(self.check_string[x-1], self.target_string[y-1])))
                 curr_path["Replacement"].pop()
-            #Insertion
-            if y > 0 and self.matrix[y-1][x] == cell_score - 1:
-                curr_path["Insertion"].append((x, y-1))
-                changes.extend(backtrack(x, y-1, curr_path, curr_distance + INSERTION_ERROR))
-                curr_path["Insertion"].pop()
             #Deletion
             if x > 0 and self.matrix[y][x-1] == cell_score - 1:
                 curr_path["Deletion"].append((x-1, y))
@@ -141,6 +145,8 @@ class BKNode:
             if left_bound <= distance <= right_bound:
                 best_string_transform_distance = self.next[distance].get_close_nodes(word, max_distance, close_nodes, best_string_transform_distance)[1]
         return (close_nodes, best_string_transform_distance)
+
+#-----Functions-----
     
 #Calculates the distance between two strings using insertion, deletion and replacement
 def levenshtein_distance(check_string: str, target_string: str) -> LevenshteinDistance:
@@ -180,6 +186,8 @@ def list_to_BK_tree(list_to_turn: list[str]) -> BKNode:
         if word == root.word: continue
         root.add_node(BKNode(word, levenshtein_distance))
     return root
+
+#-----Main-----
 
 if __name__ == "__main__":
     distance = levenshtein_distance("", "two")

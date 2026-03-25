@@ -5,23 +5,56 @@
 
 import NumberWord
 
+class Condition:
+    def __init__(self, check_function: callable, value_type: type | None = None, parameter_wrapper: tuple | None = None) -> None:
+        self.check_function: callable = check_function
+        self.value_type: type | None = value_type
+        self.parameter_wrapper: tuple | None = parameter_wrapper
+
+    def check_value(self, value: "self.value_type") -> bool:
+        if self.value_type and not isinstance(value, self.value_type):
+            try:
+                value = self.value_type(value)
+            except:
+                return False
+        if self.parameter_wrapper:
+            valid_value: any = self.check_function(value, *self.parameter_wrapper)
+        else:
+            valid_value: any = self.check_function(value)
+        if not isinstance(valid_value, bool):
+            raise TypeError(f"{valid_value} of type {type(valid_value)} is not type bool!")
+        else:
+            return True
+
 #Gets inputs from the user until they input a valid option, then returns the valid option 
-def get_option(question: str, error_message = "Invalid Option!", sanitise_functions: list[callable] = [], valid_answers: list = [], answers_as_range: range = None) -> any:
+def get_option(question: str, or_conditions: list[Condition] = [], and_conditions: list[Condition] = [], error_message = "Invalid Option!", sanitise_functions: list[callable] = []) -> any:
+    if not or_conditions and not and_conditions:
+        raise ValueError("No Conditions Added!")
     #Keeps asking for inputs until a valid option is given
     while True:
-        answer = input(f"{question}\n")
+        user_input: str = input(f"{question}\n")
         try:
-            #Changes the answer by applying functions to the answer
+            #Changes the user input by applying functions to the input
             for function in sanitise_functions:
-                answer = function(answer)
+                user_input = function(user_input)
         except:
             print(error_message)
             continue
-        #Returns the answer if valid else prints the error message
-        if answer in valid_answers or answer in answers_as_range:
-            return answer
+        #Returns the user input if valid else prints the error message
+        valid_input: bool = False
+        for condition in or_conditions:
+            if condition.check_value(user_input):
+                valid_input = True
+                break
+        if valid_input:
+            for condition in and_conditions:
+                if not condition.check_value(user_input):
+                    valid_input = False
+                    break
+        if valid_input:
+            return user_input
         else:
             print(error_message)
 
-get_option("Input a number between 1-10", error_message="Input a number between 1-10!", valid_answers=["w", "e", "n", "s"], sanitise_functions=[int], answers_as_range=range(1, 11))
-print(NumberWord.number_to_word(16723).lower())
+if __name__ == "__main__":
+    pass
