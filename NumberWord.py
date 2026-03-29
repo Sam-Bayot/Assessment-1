@@ -30,7 +30,6 @@ VALID_WORD_LIST: list[str] = (list(SPECIAL_NUMBERS.forward_dict.values()) +
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
 BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(VALID_WORD_LIST)
-print(SPECIAL_NUMBERS.items())
 #-----Functions-----
 
 #Converts a list of integers into an integer
@@ -241,11 +240,6 @@ def word_to_number(word_to_turn: str) -> int | float:
     if is_negative: word_as_number *= -1
     return float(word_as_number) if decimal_word_as_list else int(word_as_number)
 
-def start_time_taken():
-    return time.perf_counter()
-def print_time_taken(start):
-    return print(f"Time taken: {time.perf_counter() - start:.6f} seconds")
-
 """-----TEST VALUE-----
 Eiht Quattuortsrigintillion Too Hundrred Ansd Thwirty For Trtrigintsillion Twp Hundered Ands Forsty Threee Duotrigintillions Eighe Hundrred And Thierty Forur Untrigisntillion Eiht
 Hundrsed Anwd Sity Fibe Trigintillon Too Hundrred Ansd Thorty none Novemviginiatillion Fur Husndred And Eihty Fiv Octovergintillion Spx Hundrsed And Twinty Throe Septemintillion Foulr
@@ -256,6 +250,11 @@ Oen Trecedikkion Seevn Hunderd Ad Fitfy Too Doudecillino Thee Hunered Ad Foorty 
 Two Octokkion Thee Hunddred Andd Foirten aeptollion Seeven Hudred Ad Thorty Too Sextpllion For gundred An Trelve quentillion Thee Hondred An Fourty
 Ones Quadrilloim Fiev Huvdred Ans weventy Fiee Trolloon Seben Hunded Abd Trenty Thwee Bikkion Ohe Hondred Ahf rorty Fove Mokkion Seben Hurded Ad Teenty Thee thosugand Four hunsrde An Fitfeen
 """
+
+def start_time_taken():
+    return time.perf_counter()
+def print_time_taken(start):
+    return print(f"Time taken: {time.perf_counter() - start:.6f} seconds")
 
 #Test function for converting words or numbers
 def test():

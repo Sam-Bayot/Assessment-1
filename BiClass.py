@@ -1,7 +1,7 @@
 #File: BiClass.py
 #Description: A collection of data structures with an unique one-to-one key/value relationship
 #Author: Sam Bayot
-#Last Modified: 22/03/26
+#Last Modified: 29/03/26
 
 #-----Classes-----
 
