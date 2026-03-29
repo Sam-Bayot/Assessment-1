@@ -17,6 +17,21 @@ class BiDict:
     def create_backward_dict(self, forward_dict: dict) -> dict:
         return {value: key for key, value in forward_dict.items()}
 
+    #Returns the keys of the dict
+    def keys(self, get_forward: bool = True) -> "dict_keys":
+        curr_dict: dict = self.forward_dict if get_forward else self.backward_dict
+        return curr_dict.keys()
+
+    #Returns the values of the dict
+    def values(self, get_forward: bool = True) -> "dict_values":
+        curr_dict: dict = self.forward_dict if get_forward else self.backward_dict
+        return curr_dict.values()
+
+    #Returns the items in the dict
+    def items(self, get_forward: bool = True) -> "dict_items":
+        curr_dict: dict = self.forward_dict if get_forward else self.backward_dict
+        return curr_dict.items()
+
     #Checks both forward and backward dict for the key then returns the result
     def __getitem__(self, key: any) -> any:
         if key in self.forward_dict:
