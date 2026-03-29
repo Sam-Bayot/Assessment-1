@@ -165,7 +165,6 @@ def word_to_number(word_to_turn: str) -> int | float:
     #Turns chunks of 3 digits and turns them into numbers
     def hundred_place_to_number(curr_chunk: list[str]) -> int:
         chunk_number: int = 0
-
         #Hundreds digit
         if "HUNDRED" in curr_chunk:
             chunk_number += ONES_PLACE[curr_chunk[0]] * 100
@@ -262,6 +261,7 @@ Ones Quadrilloim Fiev Huvdred Ans weventy Fiee Trolloon Seben Hunded Abd Trenty 
 def test():
     def get_word_to_number(user_input: str):
         #tries to turn the word into a number
+        number = word_to_number(user_input)
         try:
             start = start_time_taken()
             number = word_to_number(user_input)
