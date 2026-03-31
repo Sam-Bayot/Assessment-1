@@ -1,7 +1,7 @@
 #File: Input.py
 #Description: Script that handles live player input, such as arrow key presses
 #Author: Sam Bayot
-#Last Modified: 25/03/26
+#Last Modified: 31/03/26
 
 import msvcrt
 import BiClass
@@ -21,7 +21,7 @@ class InputEvent:
 #-----Functions-----
 
 #Gets the player input in real time
-def get_input(wait_sec: float = 1) -> str | None:
+def get_real_time_input(wait_sec: float = 1) -> str | None:
     start_timer: float = time.perf_counter()
     #Waits until a key is pressed
     while True:
@@ -51,15 +51,20 @@ def get_event(key: str) -> str:
     if key in EVENTS:
         return EVENTS[key]
     return None
-        
+
+#Gets the event from a real time input
+def get_real_time_input_event() -> InputEvent | None:
+    key: str = get_real_time_input()      
+    event: str = get_event(key)
+    if event:
+        return InputEvent(key, event)
+    else:
+        return None
+    
 if __name__ == "__main__":
     while True:
-        key: str = get_input()      
-        event: str = get_event(key)
-        input_event: InputEvent = None
-        if event:
-            input_event = InputEvent(key, event)
-            print(input_event.event)
-            if input_event.event == "quit":
-                raise ValueError("key q was pressed")
-            
+        input_event: InputEvent = get_real_time_event()
+        if input_event.event == "quit":
+            raise ValueError("key q was pressed")
+
+

@@ -30,6 +30,7 @@ VALID_WORD_LIST: list[str] = (list(SPECIAL_NUMBERS.forward_dict.values()) +
 PLACE_VALUES: dict[str, int] = {place: 10 ** (3 * i) for i, place in enumerate(PLACES)}
 #BK_TREE of every number word
 BK_TREE: AutoCorrect.BKNode = AutoCorrect.list_to_BK_tree(VALID_WORD_LIST)
+MAX_WORD_STRING_TRANSFORM_DISTANCE: float = 7.0
 #-----Functions-----
 
 #Converts a list of integers into an integer
@@ -190,12 +191,15 @@ def word_to_number(word_to_turn: str) -> int | float:
         if word in VALID_WORD_LIST:
             auto_corrected_words.append(word)
             continue
-        nodes: list[list[BKNode, Distance]] = BK_TREE.get_close_nodes(word, 5)[0]
+        nodes: list[list[AutoCorrect.BKNode, AutoCorrect.LevenshteinDistance]] = BK_TREE.get_close_nodes(word, 5)[0]
         if not nodes:
             raise ValueError(f"{word} not found in BK_TREE")
         closest_node: str = nodes[-1]
         if closest_node and closest_node[0].word != "AND":
-            auto_corrected_words.append(closest_node[0].word)
+            if closest_node[1].string_transform_distance<= MAX_WORD_STRING_TRANSFORM_DISTANCE:
+                auto_corrected_words.append(closest_node[0].word)
+            else:
+                raise ValueError(f"{word} not found in BK_TREE")
     word_as_list: BiClass.BiList[str] = BiClass.BiList(*auto_corrected_words)
     #Bool for whether the number is a negative or not
     is_negative: bool = word_as_list[0] == "NEGATIVE"
@@ -260,7 +264,6 @@ def print_time_taken(start):
 def test():
     def get_word_to_number(user_input: str):
         #tries to turn the word into a number
-        number = word_to_number(user_input)
         try:
             start = start_time_taken()
             number = word_to_number(user_input)

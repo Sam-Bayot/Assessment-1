@@ -8,11 +8,34 @@ import BiClass
 
 #-----Classes-----
 
+#A tuple holding the x and y position of an entity
+class Position:
+    def __init__(self, position_x: int, position_y: int) -> None:
+        self.x: int = position_x
+        self.y: int = position_y
+
+    #Creates a new version of the position
+    def copy(self) -> "Position":
+        return Position(self.x, self.y)
+
+    #Updates the x and y positions of the object
+    def update(self, x: int, y: int) -> None:
+        self.x = x
+        self.y = y
+
+    #Gives the string version of the position
+    def __str__(self) -> str:
+        return str((self.x, self.y))
+
+    #Function for checking if a tuple is equal to the tuple version of the position
+    def __eq__(self, value: any) -> bool:
+        return value == (self.x, self.y)
+
 #A position in the map that handles interactions when the player enters
 class Interaction:
 
-    def __init__(self, name: str, position: list[int, int], enter_function: callable = None, state: str = "?", parent_map: "Map" = None) -> None:
-        self.position: list[int, int] = position
+    def __init__(self, name: str, position: tuple[int, int], enter_function: callable = None, state: str = "?", parent_map: "Map" = None) -> None:
+        self.position: Position = Position(*position)
         self.state: str = state
         self.name: str = name
         #Creates a callable that runs the enter function and updates the map afterwards
@@ -39,78 +62,67 @@ class Interaction:
                 
 #Class for a 2D map
 class Map:
-    def __init__(self, map_state: list[list[str]], interactions: list[Interaction]) -> None:
+    def __init__(self, map_state: list[list[str]], interactions: list[Interaction], frame_radii: tuple[int, int], boundary_sprite: str) -> None:
         self.map_state: list[list[str]] = map_state
         self.interactions: BiClass.BiDict[str, Interaction] = BiClass.BiDict({interaction.name: interaction for interaction in interactions})
         self.seen_map: set[tuple[int, int]] = set()
+        self.frame_width, self.frame_height = frame_radii
+        self.boundary_sprite: str = boundary_sprite
 
         #Updates the state of each interaction
         for interaction in self.interactions.values():
             interaction.parent_map = self
             self.update_map_interaction(interaction)
 
+    #Sets the map state in terms of a position object
+    def set_position_state(self, position: Position, state: str) -> None:
+        self.map_state[position.y][position.x] = state
+
+    #Gets the map state of a position
+    def get_position_state(self, position: Position) -> str:
+        return self.map_state[position.y][position.x]
+    
     #Updates the map to the interaction state
     def update_map_interaction(self, interaction: Interaction):
-        self.map_state[interaction.position[1]][interaction.position[0]] = interaction.state
+        self.set_position_state(interaction.position, interaction.state)
 
-#Returns a grid of strings that is the shape of an oval around a position in the map
-def get_map_frame(position: tuple[int, int], curr_map: Map, width_radius: int, height_radius: int, position_sprite: str = "") -> list[list[str]]:
-    y_ratio: float = height_radius / width_radius
-    #Creates a 2D matrix to hold the frame
-    curr_frame: list[list[str]] = [[] for _ in range((height_radius * 2) + 1)]
-    
-    #min_y and y_offset is if the player is too high up in the map to avoid accessing invalid indices
-    min_y = max(position[1] - height_radius, 0)
-    y_offset = height_radius - (position[1] - min_y)
-
-    for i, row in enumerate(curr_map.map_state[min_y : min(position[1] + height_radius + 1, len(curr_map.map_state))], start=y_offset):
-        center_y = abs(i - height_radius)
-        #min_x and x_offset is if the player is too far left of the map to avoid accessing invalid indices
-        min_x = max(position[0] - width_radius, 0)
-        x_offset = width_radius - (position[0] - min_x)
+    #Returns a grid of strings that is the shape of an oval around a position in the map
+    def get_map_frame(self, position: Position, position_sprite: str = "") -> list[list[str]]:
+        y_ratio: float = self.frame_height / self.frame_width
+        #Creates a 2D matrix to hold the frame
+        curr_frame: list[list[str]] = [[] for _ in range((self.frame_height * 2) + 1)]
         
-        #Prints the letter if it is within the radius
-        for j, letter in enumerate(row[min_x : min(position[0] + width_radius + 1, len(row))], start=x_offset):
-            center_x = abs(j - width_radius) * y_ratio
-            if i == height_radius and j == width_radius and position_sprite:
-                curr_frame[i].append(position_sprite)
-            #Pythagoras formula to check whether each position is within a certain distance or radius from the centre
-            if abs(center_y*center_y) + abs(center_x*center_x) <= (height_radius*height_radius):
-                curr_frame[i].append(letter)
-                #Adds the position to the seen_map
-                curr_map.seen_map.add((j + min_x - x_offset, i + min_y - y_offset))
-            else:
-                curr_frame[i].append(' ')
-    return curr_frame
+        #min_y and y_offset is if the player is too high up in the map to avoid accessing invalid indices
+        min_y = max(position.y - self.frame_height, 0)
+        y_offset = self.frame_height - (position.y - min_y)
 
-#Prints the frame
-def print_current_frame(frame: list[list[str]]) -> None:
-    for row in frame:
-        #Prints each letter without adding a newline
-        for letter in row:
-            print(letter, end='')
-        print()
+        for i, row in enumerate(self.map_state[min_y : min(position.y + self.frame_height + 1, len(self.map_state))], start=y_offset):
+            center_y = abs(i - self.frame_height)
+            #min_x and x_offset is if the player is too far left of the map to avoid accessing invalid indices
+            min_x = max(position.x - self.frame_width, 0)
+            x_offset = self.frame_width - (position.x - min_x)
+            
+            #Prints the letter if it is within the radius
+            for j, letter in enumerate(row[min_x : min(position.x + self.frame_width + 1, len(row))], start=x_offset):
+                center_x = abs(j - self.frame_width) * y_ratio
+                if i == self.frame_height and j == self.frame_width and position_sprite:
+                    curr_frame[i].append(position_sprite)
+                #Pythagoras formula to check whether each position is within a certain distance or radius from the centre
+                elif abs(center_y*center_y) + abs(center_x*center_x) <= (self.frame_height*self.frame_height):
+                    curr_frame[i].append(letter)
+                    #Adds the position to the seen_map
+                    self.seen_map.add((j + min_x - x_offset, i + min_y - y_offset))
+                else:
+                    curr_frame[i].append(' ')
+        return curr_frame
 
-#Prints the part of the map the player has already seen
-def print_seen_map(player_map: Map, player_position: tuple[int, int], position_sprite: str = "") -> None:
-    #Sorts the seen map which is a set of a tuple of 2 integers
-    sorted_seen_map: list[tuple[int, int]] = sorted(player_map.seen_map, key=lambda position: position[1])
-
-    #Goes through each row of the map and prints the character if the position is in the seen map
-    for i, row in enumerate(player_map.map_state[sorted_seen_map[0][1]:sorted_seen_map[-1][1] + 1]):
-        line = ""
-        for j, letter in enumerate(row):
-            #Adds the player sprite to 'line' if it is the player position
-            if (j, i + sorted_seen_map[0][1]) == tuple(player_position) and position_sprite:
-                line += position_sprite
-                continue
-            #Adds the letter sprite to 'line' if it is in seen map
-            if (j, i + sorted_seen_map[0][1]) in player_map.seen_map:
-                line += letter
-            else:
-                line += ' '
-        #Prints the whole formatted line
-        print(line)
+    #Prints the frame
+    def print_current_frame(self, frame: list[list[str]]) -> None:
+        for row in frame:
+            #Prints each letter without adding a newline
+            for letter in row:
+                print(letter, end='')
+            print()
 
 NORTH_ISLAND_MAP: Map = Map([
 list("###"),  
@@ -156,5 +168,4 @@ list("              ###--------###"),
 list("                 ##----###"),  
 list("                  #######"),  
 list("                    ####")  
-], [])
-print_current_frame(get_map_frame((25, 25), NORTH_ISLAND_MAP, 15, 10, "o"))
+], [], (15, 7), "#" )
